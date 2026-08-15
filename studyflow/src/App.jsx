@@ -1,141 +1,41 @@
-import { useEffect, useState } from "react";
-import Navbar from "./components/Navbar";
-import StatCard from "./components/StatCard";
-import TaskItem from "./components/TaskItem";
+import { useEffect, useMemo, useState } from "react";
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
+import Dashboard from "./pages/Dashboard";
+import Tasks from "./pages/Tasks";
+import Subjects from "./pages/Subjects";
+import Reports from "./pages/Reports";
 
-function App() {
-  const [tasks, setTasks] = useState(() => {
-    const savedTasks = localStorage.getItem("tasks");
+const starterTasks=[{id:1,title:"Praticar React Hooks",subject:"React",date:"Hoje",time:"19:00",priority:"Alta",duration:60,completed:false},{id:2,title:"Revisar consultas e JOINs",subject:"SQL",date:"Hoje",time:"20:30",priority:"Média",duration:45,completed:true},{id:3,title:"Lista de exercícios",subject:"Matemática",date:"Amanhã",time:"18:00",priority:"Baixa",duration:50,completed:false},{id:4,title:"Revisar vocabulário",subject:"Inglês",date:"Sex, 21 Jun",time:"17:30",priority:"Média",duration:30,completed:false}];
+const starterSubjects=["React","SQL","Matemática","Inglês"];
+const normalizeTask=(task)=>({...task,title:task.title||task.text||"Tarefa sem título",subject:task.subject||"Geral",date:task.date||"Hoje",time:task.time||"Sem horário",priority:task.priority||"Média",duration:Number(task.duration)||30});
+const starterNotifications=[{id:1,icon:"✓",title:"Continue avançando",text:"Você tem tarefas pendentes para hoje.",time:"Agora",read:false},{id:2,icon:"↗",title:"Resumo disponível",text:"Confira seu progresso na área de relatórios.",time:"Hoje",read:false}];
+function load(key,fallback){try{const value=localStorage.getItem(key);return value?JSON.parse(value):fallback}catch{return fallback}}
 
-    if (savedTasks) {
-      return JSON.parse(savedTasks);
-    }
-
-    return [
-      {
-        id: 1,
-        text: "Fazer exercícios de SQL",
-        completed: false,
-      },
-      {
-        id: 2,
-        text: "Estudar React",
-        completed: true,
-      },
-      {
-        id: 3,
-        text: "Revisar Matemática",
-        completed: false,
-      },
-    ];
-  });
-
- 
-  const [newTask, setNewTask] = useState("");
-   useEffect(() => {
-    localStorage.setItem(
-      "tasks",
-      JSON.stringify(tasks)
-    );
-  }, [tasks]);
-
-  function addTask() {
-    if (newTask.trim() === "") return;
-
-    const task = {
-      id: Date.now(),
-      text: newTask,
-      completed: false,
-    };
-
-    setTasks([...tasks, task]);
-    setNewTask("");
-  }
-
-  function toggleTask(id) {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id
-          ? { ...task, completed: !task.completed }
-          : task
-      )
-    );
-  }
-
-  function deleteTask(id) {
-    setTasks(tasks.filter((task) => task.id !== id));
-  }
-
-  const completedTasks = tasks.filter(
-    (task) => task.completed
-  ).length;
-
-  const pendingTasks = tasks.length - completedTasks;
-
-  return (
-    <div className="min-h-screen bg-slate-900 text-white">
-      <Navbar />
-
-      <main className="max-w-5xl mx-auto p-6">
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <StatCard
-            title="Total de tarefas"
-            value={tasks.length}
-          />
-
-          <StatCard
-            title="Concluídas"
-            value={completedTasks}
-          />
-
-          <StatCard
-            title="Pendentes"
-            value={pendingTasks}
-          />
-        </div>
-
-        <div className="bg-slate-800 rounded-xl p-6 mb-6">
-          <h2 className="text-2xl font-bold mb-4">
-            Nova Tarefa
-          </h2>
-
-          <div className="flex gap-3">
-            <input
-              type="text"
-              placeholder="Digite uma tarefa..."
-              value={newTask}
-              onChange={(e) => setNewTask(e.target.value)}
-              className="flex-1 p-3 rounded-lg bg-slate-700 outline-none"
-            />
-
-            <button
-              onClick={addTask}
-              className="bg-blue-600 px-6 py-3 rounded-lg hover:bg-blue-700 transition"
-            >
-              Adicionar
-            </button>
-          </div>
-        </div>
-
-        <div className="bg-slate-800 rounded-xl p-6">
-          <h2 className="text-2xl font-bold mb-4">
-            Minhas Tarefas
-          </h2>
-
-          <div className="space-y-3">
-            {tasks.map((task) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onToggle={toggleTask}
-                onDelete={deleteTask}
-              />
-            ))}
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+function App(){
+  const [tasks,setTasks]=useState(()=>{const saved=load("studyflow-tasks",null)||load("tasks",null);return saved?saved.map(normalizeTask):starterTasks});
+  const [subjects,setSubjects]=useState(()=>load("studyflow-subjects",starterSubjects));
+  const [page,setPage]=useState("dashboard"); const [filter,setFilter]=useState("Todas"); const [status,setStatus]=useState("all"); const [search,setSearch]=useState(""); const [modal,setModal]=useState(null); const [editingTask,setEditingTask]=useState(null); const [sidebarOpen,setSidebarOpen]=useState(false); const [toast,setToast]=useState(""); const [notifications,setNotifications]=useState(()=>load("studyflow-notifications",starterNotifications)); const [notificationsOpen,setNotificationsOpen]=useState(false);
+  useEffect(()=>localStorage.setItem("studyflow-tasks",JSON.stringify(tasks)),[tasks]);
+  useEffect(()=>localStorage.setItem("studyflow-subjects",JSON.stringify(subjects)),[subjects]);
+  useEffect(()=>localStorage.setItem("studyflow-notifications",JSON.stringify(notifications)),[notifications]);
+  useEffect(()=>{if(!toast)return;const timer=setTimeout(()=>setToast(""),2500);return()=>clearTimeout(timer)},[toast]);
+  useEffect(()=>{function key(event){if(event.key==="Escape")setModal(null);if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==="k"){event.preventDefault();document.querySelector(".search-box input")?.focus()}}window.addEventListener("keydown",key);return()=>window.removeEventListener("keydown",key)},[]);
+  const visibleTasks=useMemo(()=>{const term=search.trim().toLocaleLowerCase("pt-BR");return tasks.filter((task)=>(filter==="Todas"||task.subject===filter)&&(status==="all"||(status==="done"?task.completed:!task.completed))&&(!term||`${task.title} ${task.subject}`.toLocaleLowerCase("pt-BR").includes(term)))},[tasks,filter,status,search]);
+  function notify(message){setToast(message)}
+  function changeSearch(value){setSearch(value);if(value.trim()){setPage("tasks");setFilter("Todas");setStatus("all")}}
+  function openNotification(item){setNotifications((current)=>current.map((note)=>note.id===item.id?{...note,read:true}:note));setNotificationsOpen(false);setPage(item.id===2?"reports":"tasks")}
+  function toggleTask(id){setTasks((current)=>current.map((task)=>task.id===id?{...task,completed:!task.completed}:task));notify("Progresso atualizado")}
+  function deleteTask(id){if(!window.confirm("Deseja excluir esta tarefa?"))return;setTasks((current)=>current.filter((task)=>task.id!==id));notify("Tarefa excluída")}
+  function openTask(task=null){setEditingTask(task);setModal("task")}
+  function saveTask(event){event.preventDefault();const data=new FormData(event.currentTarget);const item={id:editingTask?.id||Date.now(),title:data.get("title").trim(),subject:data.get("subject"),date:data.get("date")||"Hoje",time:data.get("time")||"Sem horário",priority:data.get("priority"),duration:Number(data.get("duration"))||30,completed:editingTask?.completed||false};setTasks((current)=>editingTask?current.map((task)=>task.id===editingTask.id?item:task):[item,...current]);setModal(null);notify(editingTask?"Tarefa atualizada":"Nova tarefa criada")}
+  function addSubject(event){event.preventDefault();const name=new FormData(event.currentTarget).get("name").trim();if(!name||subjects.some((s)=>s.toLowerCase()===name.toLowerCase()))return;setSubjects((current)=>[...current,name]);setModal(null);notify("Matéria adicionada")}
+  function deleteSubject(subject){if(tasks.some((t)=>t.subject===subject)){window.alert("Esta matéria possui tarefas. Mova ou exclua as tarefas antes de removê-la.");return}if(window.confirm(`Excluir a matéria ${subject}?`)){setSubjects((current)=>current.filter((s)=>s!==subject));notify("Matéria excluída")}}
+  function selectSubject(subject){setFilter(subject);setPage("tasks")}
+  const shared={tasks:visibleTasks,subjects,filter,setFilter,status,setStatus,toggleTask,editTask:openTask,deleteTask,onNewTask:()=>openTask()};
+  return <div className="app-shell" onClick={()=>notificationsOpen&&setNotificationsOpen(false)}><div className="ambient ambient-one"/><div className="ambient ambient-two"/><Sidebar subjects={subjects} tasks={tasks} page={page} onNavigate={setPage} activeFilter={filter} onFilterChange={setFilter} onAddSubject={()=>setModal("subject")} open={sidebarOpen} onClose={()=>setSidebarOpen(false)}/><main className="main-content"><div onClick={(e)=>e.stopPropagation()}><Header search={search} onSearchChange={changeSearch} onNewTask={()=>openTask()} onMenu={()=>setSidebarOpen(true)} notifications={notifications} notificationsOpen={notificationsOpen} onToggleNotifications={()=>setNotificationsOpen((open)=>!open)} onClearNotifications={()=>setNotifications((current)=>current.map((item)=>({...item,read:true})))} onNotificationClick={openNotification}/></div>{page==="dashboard"&&<Dashboard {...shared} tasks={tasks} visibleTasks={visibleTasks}/>} {page==="tasks"&&<Tasks {...shared}/>} {page==="subjects"&&<Subjects subjects={subjects} tasks={tasks} onAdd={()=>setModal("subject")} onDelete={deleteSubject} onSelect={selectSubject}/>} {page==="reports"&&<Reports tasks={tasks} subjects={[...subjects]}/>}</main>
+  {modal==="task"&&<div className="modal-backdrop" onMouseDown={()=>setModal(null)}><div className="modal" role="dialog" aria-modal="true" onMouseDown={(e)=>e.stopPropagation()}><button className="modal-close" onClick={()=>setModal(null)} aria-label="Fechar">×</button><p className="eyebrow">{editingTask?"EDITAR PLANO":"NOVO PLANO"}</p><h2>{editingTask?"Editar tarefa":"Adicionar tarefa"}</h2><p>Defina o próximo passo da sua jornada.</p><form onSubmit={saveTask}><label>Título<input name="title" autoFocus required defaultValue={editingTask?.title} placeholder="Ex: Revisar componentes React"/></label><div className="form-grid"><label>Matéria<select name="subject" defaultValue={editingTask?.subject||subjects[0]}>{subjects.map((item)=><option key={item}>{item}</option>)}</select></label><label>Prioridade<select name="priority" defaultValue={editingTask?.priority||"Média"}><option>Baixa</option><option>Média</option><option>Alta</option></select></label><label>Data<input name="date" defaultValue={editingTask?.date} placeholder="Hoje"/></label><label>Horário<input name="time" type="time" defaultValue={editingTask?.time?.includes(":")?editingTask.time:""}/></label><label>Duração (min)<input name="duration" type="number" min="5" step="5" defaultValue={editingTask?.duration||30}/></label></div><button className="primary-button modal-submit" type="submit">{editingTask?"Salvar alterações":"Criar tarefa"}</button></form></div></div>}
+  {modal==="subject"&&<div className="modal-backdrop" onMouseDown={()=>setModal(null)}><div className="modal small-modal" onMouseDown={(e)=>e.stopPropagation()}><button className="modal-close" onClick={()=>setModal(null)}>×</button><p className="eyebrow">NOVA ÁREA</p><h2>Adicionar matéria</h2><p>Crie uma nova categoria para seus estudos.</p><form onSubmit={addSubject}><label>Nome<input name="name" autoFocus required placeholder="Ex: JavaScript"/></label><button className="primary-button modal-submit">Adicionar matéria</button></form></div></div>}
+  {toast&&<div className="toast">✓ {toast}</div>}</div>;
 }
-
 export default App;

@@ -1,0 +1,5 @@
+function TaskCard({ task, onToggle, onEdit, onDelete }) {
+  const slug = task.subject.toLocaleLowerCase("pt-BR").replaceAll(" ", "-");
+  return <article className={task.completed ? "task-card completed" : "task-card"}><button className="task-check" onClick={() => onToggle(task.id)} aria-label={task.completed ? "Marcar como pendente" : "Marcar como concluída"}>{task.completed && "✓"}</button><div className={`task-subject subject-${slug}`}>{task.subject.slice(0, 2).toUpperCase()}</div><div className="task-main"><h3>{task.title}</h3><div className="task-meta"><span>{task.subject}</span><span>◷ {task.time}</span><span>▣ {task.date}</span><span>◎ {task.duration} min</span></div></div><span className={`priority priority-${task.priority.toLowerCase()}`}>{task.priority}</span><div className="task-actions"><button onClick={() => onEdit(task)} aria-label="Editar tarefa" title="Editar">✎</button><button onClick={() => onDelete(task.id)} aria-label="Excluir tarefa" title="Excluir">×</button></div></article>;
+}
+export default TaskCard;

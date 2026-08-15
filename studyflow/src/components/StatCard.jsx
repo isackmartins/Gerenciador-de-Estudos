@@ -1,15 +1,3 @@
-function StatCard({ title, value }) {
-  return (
-    <div className="bg-slate-800 rounded-xl p-6">
-      <h2 className="text-slate-400">
-        {title}
-      </h2>
-
-      <p className="text-3xl font-bold mt-2">
-        {value}
-      </p>
-    </div>
-  );
-}
-
+const icons = { layers: "▱", check: "✓", clock: "◷", bolt: "ϟ" };
+function StatCard({ title, value, detail, icon, tone }) { return <article className={`stat-card ${tone}`}><div className="stat-icon">{icons[icon]}</div><div><p>{title}</p><strong>{value}</strong><small>{detail}</small></div><span className="stat-trend">↗</span></article>; }
 export default StatCard;
